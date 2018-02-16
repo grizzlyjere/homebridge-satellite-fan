@@ -1,27 +1,29 @@
 {
-  "name": "homebridge-satellite-fan",
-  "description": "Plugin for homebridge that connects to a Satellite Fan control module: https://www.fan-light.com",
-  "author": "Zachary Waldowski <zach@waldowski.me> (https://waldowski.me)",
-  "version": "0.2.3",
+  "name": "mqtt-satellite-fan",
+  "description": "Uses mqtt to cnnect to a Satellite Fan control module: https://www.fan-light.com",
+  "author": "",
+  "version": "0.0.1",
   "license": "MIT",
   "keywords": [
-    "homebridge-plugin",
+    "hmqtt",
     "bluetooth",
     "ble",
     "ceiling-fan"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/zwaldowski/homebridge-satellite-fan.git"
+    "url": "https://github.com/grizzlyjere/mqtt-satellite-fan.git"
   },
   "bugs": {
-    "url": "https://github.com/zwaldowski/homebridge-satellite-fan/issues"
+    "url": "https://github.com/grizzlyjere/mqtt-satellite-fan"
   },
   "engines": {
     "node": ">=4.8.0",
     "homebridge": ">=0.4.0"
   },
   "dependencies": {
+    "log": "^1.4.0",
+    "mqtt": "^2.15.2",
     "noble": "git+https://git@github.com/lockitron/noble.git"
   }
 }

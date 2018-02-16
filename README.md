@@ -1,6 +1,8 @@
-# Homebridge Ceiling Fan
+# MQTT Ceiling Fan
 
-[Homebridge](https://github.com/nfarina/homebridge) plugin that controls a ceiling fan control module made by [Satellite Electronic, Ltd.](https://www.fan-light.com) over Bluetooth Low-Energy.
+Based on work by (https://github.com/zwaldowski/homebridge-satellite-fan)
+
+NodeJS application that receives commands via MQTT to control a ceiling fan control module made by [Satellite Electronic, Ltd.](https://www.fan-light.com) over Bluetooth Low-Energy.
 
 ![Satellite Fan module](https://raw.githubusercontent.com/zwaldowski/homebridge-satellite-fan/master/images/module.jpg)
 
@@ -16,34 +18,33 @@ The plugin was designed and tested on [Raspberry Pi Zero W](https://www.raspberr
 # apt install nodejs-legacy npm bluetooth bluez libbluetooth-dev libudev-dev libcap2-bin
 ```
 
+- Install the NodeJS packages
+```shell
+# npm install
+```
+
 - Eanble BLE access via non-root users:
 
 ```shell
 # setcap cap_net_raw+eip /usr/bin/nodejs
 ```
 
-- Install [Homebridge](https://github.com/nfarina/homebridge#installation).
-
 ## Installation
 
 ```shell
-# npm install -g homebridge homebridge-satellite-fan
+[TBD]
 ```
 
-Update your configuration to include a `satellite-fan` accessory. See an example at [`sample-config.json`](https://github.com/zwaldowski/homebridge-satellite-fan/blob/master/config-sample.json).
+Copy sample-config.json to config.json
+```shell
+cp sample-config.json config.json
+```
+
+## Running
+```shell
+# node index.js
+```
 
 ## Persistent Installation
 
-See [“Running Homebridge on Bootup”](https://github.com/nfarina/homebridge/wiki/Running-Homebridge-on-a-Raspberry-Pi#running-homebridge-on-bootup-systemd).
-
-In condensed form, start with this [gist](https://gist.github.com/johannrichard/0ad0de1feb6adb9eb61a/) and then:
-
-```shell
-# mkdir /var/lib/homebridge
-# useradd --system homebridge
-# usermod -a -G i2c homebridge
-# systemctl daemon-reload
-# systemctl enable homebridge
-# systemctl start homebridge
-$ systemctl status homebridge
-```
+[TBD]
