@@ -12,5 +12,9 @@
   "mqttServer":"mqtt://127.0.0.1",
   "logFile":"./my.log",
   "remapMaxBrightness": 255,
-  "useFanSpeedWords": true
+  "useFanSpeedWords": true,
+  "fanOnStateValue": "ON",
+  "fanOffStateValue": "OFF",
+  "lightOnStateValue": "ON",
+  "lightOffStateValue": "OFF"
 }

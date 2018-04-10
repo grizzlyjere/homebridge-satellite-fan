@@ -24,6 +24,13 @@ const Noble = require('noble'),
 
   var Characteristic = {Brightness: 0, On: true, RotationSpeed: 100}
 
+  var useFanSpeedWords = this.loadedConfig.useFanSpeedWords;
+  var remapMaxBrightness = this.loadedConfig.remapMaxBrightness;
+  var fanOnStateValue = this.loadedConfig.fanOnStateValue;
+  var fanOffStateValue = this.loadedConfig.fanOffStateValue;
+  var lightOnStateValue = this.loadedConfig.lightOnStateValue;
+  var lightOffStateValue = this.loadedConfig.lightOffStateValue;
+
   var fsLogging = require('fs');
   var Log = require('log');
   var outputLog = new Log('debug', fsLogging.createWriteStream(this.loadedConfig.logFile));
@@ -38,7 +45,13 @@ const Noble = require('noble'),
   }
 
   function mapRange(value, low1, high1, low2, high2) {
-    return low2 + (((high2 - low2) * (value - low1)) / (high1 - low1));
+    //console.log("value: " + value);
+    //console.log("low1: " + low1);
+    //console.log("high1: " + high1);
+    //console.log("low2: " + low2);
+    //console.log("high2: " + high2);
+    //console.log("RESULT: " + (low2 + (((high2 - low2) * (value - low1)) / (high1 - low1))))
+    return (low2 + (((high2 - low2) * (value - low1)) / (high1 - low1)));
   }
   
   class FanRequest {
@@ -207,8 +220,9 @@ const Noble = require('noble'),
       {
         case MqttTopicFanSpeedSet:
           var level = 0
-          if(this.loadedConfig.useFanSpeedWords)
+          if(useFanSpeedWords)
           {
+            //console.log("Using fan speed words: " + message);
             if(message == "off")
               {
                 level = 0;
@@ -234,16 +248,19 @@ const Noble = require('noble'),
               level = 3;
             }
           }
+
+          console.log("  Setting fan to: " + level)
           var requestFanSpeed = new FanUpdateLevelRequest(level)
           this.sendCommand(requestFanSpeed, this.sendCommandCallbackTest.bind(this))
           break;
           
         case MqttTopicFanOnSet:
           var targetFanLevel = 0
-          if(message.toString().toLowerCase() == 'true')
+          if(message.toString().toLowerCase() == fanOnStateValue.toLowerCase())
           {
             targetFanLevel = 1;
           }
+          console.log("  Setting fan to: " + targetFanLevel)
           var requestFanOnOff = new FanUpdateLevelRequest(targetFanLevel)
           this.sendCommand(requestFanOnOff, this.sendCommandCallbackTest.bind(this))
           
@@ -251,7 +268,7 @@ const Noble = require('noble'),
         case MqttTopicLightOnSet:
           var targetLightStatus = false
           var targetLightLevel = 0
-          if(message.toString().toLowerCase() == 'true')
+          if(message.toString().toLowerCase() == lightOnStateValue.toLowerCase())
           {
             targetLightStatus = true;
             targetLightLevel = 100
@@ -263,24 +280,39 @@ const Noble = require('noble'),
         case MqttTopicLightBrightnessSet:
           var lightLevel = 0
           lightLevel = parseInt(message,10)
-          var remapMaxValue = this.loadedConfig.remapMaxBrightness
+          var remapMaxValue = remapMaxBrightness
           if(remapMaxValue <= 0)
           {
             remapMaxValue = 100
           }
 
-          lightLevel = mapRange(lightLevel,0,remapMaxValue,0,100)
+          lightLevel = Math.round(mapRange(lightLevel,0,remapMaxValue,0,100));
 
           if(lightLevel >= 100)
           {
             lightLevel = 100;
           }
+
+          var requestLightDimmer;
+
           if(lightLevel < 0)
           {
             lightLevel = 0
+            //console.log("Log Brightness: false/" + lightLevel);
+             //requestLightDimmer = new FanUpdateLevelRequest(false,lightLevel)
+             requestLightDimmer = new FanUpdateLightRequest(false,lightLevel)
+             
           }
-          var requestLightDimmer = new FanUpdateLevelRequest(1,FanUpdateLightRequest)
+          else
+          {
+            //console.log("Log Brightness: true/" + lightLevel);
+             //requestLightDimmer = new FanUpdateLevelRequest(true,lightLevel)
+             requestLightDimmer = new FanUpdateLightRequest(true,lightLevel)
+          }
+          
+          
           this.sendCommand(requestLightDimmer, this.sendCommandCallbackTest.bind(this))
+
           break;
         default:
           break;
@@ -290,7 +322,7 @@ const Noble = require('noble'),
 
     sendCommandCallbackTest(item)
     {
-      console.log("sendCommandCallbackTest: " + item)
+      //console.log("sendCommandCallbackTest: " + item)
     }
 
   
@@ -430,17 +462,32 @@ const Noble = require('noble'),
     processLightStatus(errorObject, responseObject)
     {
       if(typeof (responseObject) == typeof (true)){
-        //console.log("Publishing Status to: " + MqttTopicLightOn)
-        this.mqttClient.publish(MqttTopicLightOn,responseObject.toString())
+        var transmitValue = "";
+        if(responseObject)
+        {
+          transmitValue = lightOnStateValue;
+        }
+        else
+        {
+          transmitValue = lightOffStateValue;
+        }
+
+        //console.log("Publishing Light Status to: " + MqttTopicLightOn + " [" + transmitValue + "]")
+        this.mqttClient.publish(MqttTopicLightOn,transmitValue)
       }
       
     }
 
+    //lightLevel = mapRange(lightLevel,0,remapMaxValue,0,100)
+
     processLightBrightness(errorObject, responseObject)
     {
       if(typeof (responseObject) == "number"){
-        //console.log("Publishing Status to: " + MqttTopicLightBrightness)
-        this.mqttClient.publish(MqttTopicLightBrightness,responseObject.toString())
+        var lightLevel = Math.round(mapRange(responseObject,0,100,0,remapMaxBrightness,0));
+        
+        //console.log("Publishing Light Brightness to: " + MqttTopicLightBrightness + " [" + lightLevel + "]")
+
+        this.mqttClient.publish(MqttTopicLightBrightness,lightLevel.toString())
       }
       else
       {
@@ -452,8 +499,18 @@ const Noble = require('noble'),
     {
 
       if(typeof (responseObject) == typeof (true)){
-        //console.log("Publishing Status to: " + MqttTopicFanOn)
-        this.mqttClient.publish(MqttTopicFanOn,responseObject.toString())
+        //console.log("Publishing Fan Status to: " + MqttTopicFanOn + " [" + responseObject.toString() +  "]")
+        var transmitValue = "";
+        if(responseObject)
+        {
+          transmitValue = fanOnStateValue;
+        }
+        else
+        {
+          transmitValue = fanOffStateValue;
+        }
+        //console.log(" Actual transmitted value: " + transmitValue);
+        this.mqttClient.publish(MqttTopicFanOn,transmitValue)
       }
       else
       {
@@ -465,8 +522,34 @@ const Noble = require('noble'),
     {
 
       if(typeof (responseObject) == "number"){
-        //console.log("Publishing Status to: " + MqttTopicFanSpeed)
-        this.mqttClient.publish(MqttTopicFanSpeed,responseObject.toString())
+        //console.log("Publishing Fan Speed to: " + MqttTopicFanSpeed + " [" + responseObject.toString() +  "]")
+        var transmitValue = "";
+        if(useFanSpeedWords)
+        {
+          if(responseObject.toString().startsWith("0"))
+          {
+            transmitValue = "off"
+          }
+          if(responseObject.toString().startsWith("33"))
+          {
+            transmitValue = "low"
+          }
+          if(responseObject.toString().startsWith("66"))
+          {
+            transmitValue = "medium"
+          }
+          if(responseObject.toString().startsWith("1"))
+          {
+            transmitValue = "high"
+          }
+        }
+        else
+        {
+          transmitValue = responseObject.toString();
+        }
+        //console.log("  Actual Transmit Value: " + transmitValue)
+        this.mqttClient.publish(MqttTopicFanSpeed,transmitValue)
+        
       }
       else
       {
