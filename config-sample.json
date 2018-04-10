@@ -10,5 +10,7 @@
   },
   "topicBase":"devices/harborbreezefan01/",
   "mqttServer":"mqtt://127.0.0.1",
-  "logFile":"./my.log"
+  "logFile":"./my.log",
+  "remapMaxBrightness": 255,
+  "useFanSpeedWords": true
 }

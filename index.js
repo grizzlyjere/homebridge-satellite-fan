@@ -36,6 +36,10 @@ const Noble = require('noble'),
   function trimUUID(uuid) {
     return uuid.toLowerCase().replace(/:/g, "").replace(/-/g, "")
   }
+
+  function mapRange(value, low1, high1, low2, high2) {
+    return low2 + (((high2 - low2) * (value - low1)) / (high1 - low1));
+  }
   
   class FanRequest {
   
@@ -203,10 +207,32 @@ const Noble = require('noble'),
       {
         case MqttTopicFanSpeedSet:
           var level = 0
-          level = parseInt(message,10)
-          if(level >= 3)
+          if(this.loadedConfig.useFanSpeedWords)
           {
-            level = 3;
+            if(message == "off")
+              {
+                level = 0;
+              }
+            if(message == "low")
+              {
+                level = 1;
+              }
+            if(message == "medium")
+              {
+                level = 2;
+              }
+            if(message == "high")
+              {
+                level = 3;
+              }
+          }
+          else
+          {
+            level = parseInt(message,10)
+            if(level >= 3)
+            {
+              level = 3;
+            }
           }
           var requestFanSpeed = new FanUpdateLevelRequest(level)
           this.sendCommand(requestFanSpeed, this.sendCommandCallbackTest.bind(this))
@@ -237,6 +263,14 @@ const Noble = require('noble'),
         case MqttTopicLightBrightnessSet:
           var lightLevel = 0
           lightLevel = parseInt(message,10)
+          var remapMaxValue = this.loadedConfig.remapMaxBrightness
+          if(remapMaxValue <= 0)
+          {
+            remapMaxValue = 100
+          }
+
+          lightLevel = mapRange(lightLevel,0,remapMaxValue,0,100)
+
           if(lightLevel >= 100)
           {
             lightLevel = 100;
